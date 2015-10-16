@@ -80,7 +80,7 @@ class Playlist extends Queue
      * @param UriInterface[] $track The track to add
      * @param int $position The position to insert the track in the playlist (zero-based), by default the track will be added to the end of the playlist
      *
-     * @return bool
+     * @return void
      */
     protected function addUris(array $tracks, int $position = null): bool
     {
@@ -100,11 +100,9 @@ class Playlist extends Queue
             $position++;
 
             if ($data["NumTracksAdded"] != 1) {
-                return false;
+                throw new SonosException("Failed to add all the tracks to the playlist");
             }
         }
-
-        return true;
     }
 
 

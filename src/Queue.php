@@ -173,7 +173,7 @@ class Queue implements \Countable
      * @param UriInterface[] $tracks The track to add
      * @param int $position The position to insert the track in the queue (zero-based), by default the track will be added to the end of the queue
      *
-     * @return bool
+     * @return void
      */
     protected function addUris(array $tracks, int $position = null): bool
     {
@@ -219,11 +219,9 @@ class Queue implements \Countable
             $position += $numberOfTracks;
 
             if ($data["NumTracksAdded"] != $numberOfTracks) {
-                return false;
+                throw new SonosException("Failed to add all the tracks");
             }
         }
-
-        return true;
     }
 
 
@@ -247,7 +245,7 @@ class Queue implements \Countable
      * @param string[]|UriInterface[] $tracks An array where each element is either the URI of the tracks to add, or an object that implements the UriInterface
      * @param int $position The position to insert the tracks in the queue (zero-based), by default the tracks will be added to the end of the queue
      *
-     * @return bool
+     * @return static
      */
     public function addTracks(array $tracks, int $position = null): bool
     {
@@ -263,7 +261,9 @@ class Queue implements \Countable
         }
         unset($track);
 
-        return $this->addUris($tracks, $position);
+        $this->addUris($tracks, $position);
+
+        return $this;
     }
 
 
