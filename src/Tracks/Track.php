@@ -52,7 +52,7 @@ class Track implements UriInterface
      *
      * @param string $uri The URI of the track
      */
-    public function __construct($uri)
+    public function __construct(string $uri)
     {
         $this->uri = (string) $uri;
     }

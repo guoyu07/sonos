@@ -71,7 +71,7 @@ class DeviceCollection
      *
      * @return string[] An array of ip addresses
      */
-    public function discoverDevices($address = "239.255.255.250")
+    public function discoverDevices(string $address = "239.255.255.250")
     {
         $this->logger->info("discovering devices...");
 
@@ -143,7 +143,7 @@ class DeviceCollection
     }
 
 
-    public function addIp($ip)
+    public function addIp(string $ip)
     {
         if (!in_array($ip, $this->addresses, true)) {
             $this->addresses[] = $ip;

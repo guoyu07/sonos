@@ -216,7 +216,7 @@ class Network implements LoggerAwareInterface
      *
      * @return Speaker|null
      */
-    public function getSpeakerByRoom($room)
+    public function getSpeakerByRoom(string $room)
     {
         $speakers = $this->getSpeakers();
         foreach ($speakers as $speaker) {
@@ -234,7 +234,7 @@ class Network implements LoggerAwareInterface
      *
      * @return Speaker[]
      */
-    public function getSpeakersByRoom($room)
+    public function getSpeakersByRoom(string $room)
     {
         $return = [];
 
@@ -277,7 +277,7 @@ class Network implements LoggerAwareInterface
      *
      * @return Controller|null
      */
-    public function getControllerByRoom($room)
+    public function getControllerByRoom(string $room)
     {
         if (!$speaker = $this->getSpeakerByRoom($room)) {
             return;
@@ -301,7 +301,7 @@ class Network implements LoggerAwareInterface
      *
      * @return Controller|null
      */
-    public function getControllerByIp($ip)
+    public function getControllerByIp(string $ip)
     {
         $speakers = $this->getSpeakers();
         if (!array_key_exists($ip, $speakers)) {
@@ -362,7 +362,7 @@ class Network implements LoggerAwareInterface
      *
      * @return bool
      */
-    public function hasPlaylist($name)
+    public function hasPlaylist(string $name)
     {
         $playlists = $this->getPlaylists();
         foreach ($playlists as $playlist) {
@@ -387,7 +387,7 @@ class Network implements LoggerAwareInterface
      *
      * @return Playlist|null
      */
-    public function getPlaylistByName($name)
+    public function getPlaylistByName(string $name)
     {
         $roughMatch = false;
 
@@ -414,7 +414,7 @@ class Network implements LoggerAwareInterface
      *
      * @return Playlist
      */
-    public function getPlaylistById($id)
+    public function getPlaylistById(int $id)
     {
         $controller = $this->getController();
         if ($controller === null) {
@@ -432,7 +432,7 @@ class Network implements LoggerAwareInterface
      *
      * @return Playlist
      */
-    public function createPlaylist($name)
+    public function createPlaylist(string $name)
     {
         $controller = $this->getController();
         if ($controller === null) {
@@ -477,11 +477,13 @@ class Network implements LoggerAwareInterface
 
 
     /**
-     * Get alarms for the specified id.
+     * Get the alarm from the specified id.
+     *
+     * @param int $id The ID of the alarm
      *
      * @return Alarm|null
      */
-    public function getAlarmById($id)
+    public function getAlarmById(int $id)
     {
         $id = (int) $id;
 

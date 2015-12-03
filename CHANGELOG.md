@@ -6,6 +6,7 @@ Changelog
 ### Changed
 
 * [Support] Drop support for PHP 5.6, to make use of new PHP 7.0 features.
+* Scalar parameter type hints have been added where possible.
 
 ### Removed
 
