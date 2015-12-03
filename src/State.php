@@ -53,9 +53,9 @@ class State extends Track
      * @param XmlElement $xml The xml element representing the track meta data.
      * @param Controller $controller A controller instance on the playlist's network
      *
-     * @return static
+     * @return self
      */
-    public static function createFromXml(XmlElement $xml, Controller $controller)
+    public static function createFromXml(XmlElement $xml, Controller $controller): self
     {
         $track = parent::createFromXml($xml, $controller);
 

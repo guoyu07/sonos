@@ -64,7 +64,7 @@ class Device
      *
      * @return XmlParser
      */
-    public function getXml(string $url)
+    public function getXml(string $url): XmlParser
     {
         $uri = "http://{$this->ip}:1400{$url}";
 
@@ -141,7 +141,7 @@ class Device
      *
      * @return string
      */
-    public function getModel()
+    public function getModel(): string
     {
         if ($this->model === null) {
             $parser = $this->getXml("/xml/device_description.xml");
@@ -166,7 +166,7 @@ class Device
      *
      * @return bool
      */
-    public function isSpeaker()
+    public function isSpeaker(): bool
     {
         $model = $this->getModel();
 

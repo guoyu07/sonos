@@ -40,7 +40,7 @@ class Stream implements UriInterface
      *
      * @return string
      */
-    public function getUri()
+    public function getUri(): string
     {
         return $this->uri;
     }
@@ -51,7 +51,7 @@ class Stream implements UriInterface
      *
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -62,7 +62,7 @@ class Stream implements UriInterface
      *
      * @return string
      */
-    public function getMetaData()
+    public function getMetaData(): string
     {
         return Helper::createMetaDataXml("-1", "-1", [
             "dc:title"          =>  $this->getName() ?: "Stream",
@@ -84,9 +84,9 @@ class Stream implements UriInterface
      * @param XmlElement $xml The xml element representing the track meta data
      * @param Controller $controller A controller instance to communicate with
      *
-     * @return static
+     * @return self
      */
-    public static function createFromXml(XmlElement $xml, Controller $controller)
+    public static function createFromXml(XmlElement $xml, Controller $controller): self
     {
         return new static($xml->getTag("res"));
     }

@@ -56,7 +56,7 @@ class TextToSpeech implements UriInterface
     }
 
 
-    public function setProvider(ProviderInterface $provider)
+    public function setProvider(ProviderInterface $provider): self
     {
         $this->provider = $provider;
 
@@ -64,7 +64,7 @@ class TextToSpeech implements UriInterface
     }
 
 
-    public function getProvider()
+    public function getProvider(): ProviderInterface
     {
         if ($this->provider === null) {
             $this->provider = new GoogleProvider;
@@ -79,9 +79,9 @@ class TextToSpeech implements UriInterface
      *
      * @param string $language The language to use (eg 'en')
      *
-     * @return static
+     * @return self
      */
-    public function setLanguage(string $language)
+    public function setLanguage(string $language): self
     {
         $this->getProvider()->setLanguage($language);
 
@@ -96,7 +96,7 @@ class TextToSpeech implements UriInterface
      *
      * @return string
      */
-    public function getUri()
+    public function getUri(): string
     {
         if (!$this->directory->has($this->filename)) {
             $provider = $this->getProvider();
@@ -114,7 +114,7 @@ class TextToSpeech implements UriInterface
      *
      * @return string
      */
-    public function getMetaData()
+    public function getMetaData(): string
     {
         return Helper::createMetaDataXml("-1", "-1", [
             "res"               =>  $this->getUri(),

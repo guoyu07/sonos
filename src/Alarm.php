@@ -83,7 +83,7 @@ class Alarm
      *
      * @return int
      */
-    public function getId()
+    public function getId(): int
     {
         return (int) $this->id;
     }
@@ -94,7 +94,7 @@ class Alarm
      *
      * @return string
      */
-    public function getRoom()
+    public function getRoom(): string
     {
         return $this->attributes["RoomUUID"];
     }
@@ -105,11 +105,12 @@ class Alarm
      *
      * @param string $uuid The unique id of the room (eg, RINCON_B8E93758723601400)
      *
-     * @return static
+     * @return self
      */
-    public function setRoom(string $uuid)
+    public function setRoom(string $uuid): self
     {
         $this->attributes["RoomUUID"] = $uuid;
+
         return $this->save();
     }
 
@@ -119,7 +120,7 @@ class Alarm
      *
      * @return Speaker
      */
-    public function getSpeaker()
+    public function getSpeaker(): Speaker
     {
         foreach ($this->network->getSpeakers() as $speaker) {
             if ($speaker->getUuid() === $this->getRoom()) {
@@ -136,9 +137,9 @@ class Alarm
      *
      * @param Speaker $speaker The speaker to attach this alarm to
      *
-     * @return static
+     * @return self
      */
-    public function setSpeaker(Speaker $speaker)
+    public function setSpeaker(Speaker $speaker): self
     {
         return $this->setRoom($speaker->getUuid());
     }
@@ -149,7 +150,7 @@ class Alarm
      *
      * @return string
      */
-    public function getTime()
+    public function getTime(): string
     {
         list($hours, $minutes) = explode(":", $this->attributes["StartTime"]);
         return sprintf("%02s:%02s", $hours, $minutes);
@@ -161,9 +162,9 @@ class Alarm
      *
      * @param string $time The time to set the alarm for (hh:mm)
      *
-     * @return static
+     * @return self
      */
-    public function setTime(string $time)
+    public function setTime(string $time): self
     {
         $exception = new \InvalidArgumentException("Invalid time specified, time must be in the format hh:mm");
         if (!preg_match("/^([0-9]{1,2}):([0-9]{1,2})$/", $time, $matches)) {
@@ -187,7 +188,7 @@ class Alarm
      *
      * @return int The duration in minutes
      */
-    public function getDuration()
+    public function getDuration(): int
     {
         list($hours, $minutes) = explode(":", $this->attributes["Duration"]);
         return (int) ($hours * 60) + $minutes;
@@ -199,9 +200,9 @@ class Alarm
      *
      * @param int The duration in minutes
      *
-     * @return static
+     * @return self
      */
-    public function setDuration(int $duration)
+    public function setDuration(int $duration): self
     {
         $hours = floor($duration / 60);
         $minutes = $duration % 60;
@@ -220,7 +221,7 @@ class Alarm
      *
      * @return int
      */
-    public function getFrequency()
+    public function getFrequency(): int
     {
         $data = $this->attributes["Recurrence"];
         if ($data === "ONCE") {
@@ -254,9 +255,9 @@ class Alarm
      *
      * @param int $frequency The integer representing the frequency (using the bitwise class constants)
      *
-     * @return static
+     * @return self
      */
-    public function setFrequency(int $frequency)
+    public function setFrequency(int $frequency): self
     {
         $recurrence = "ON_";
         foreach ($this->days as $key => $val) {
@@ -434,7 +435,7 @@ class Alarm
      *
      * @return string
      */
-    public function getFrequencyDescription()
+    public function getFrequencyDescription(): string
     {
         $data = $this->attributes["Recurrence"];
         if ($data === "ONCE") {
@@ -478,7 +479,7 @@ class Alarm
      *
      * @return int
      */
-    public function getVolume()
+    public function getVolume(): int
     {
         return (int) $this->attributes["Volume"];
     }
@@ -489,9 +490,9 @@ class Alarm
      *
      * @param int $volume The volume of the alarm
      *
-     * @return static
+     * @return self
      */
-    public function setVolume(int $volume)
+    public function setVolume(int $volume): self
     {
         $this->attributes["Volume"] = $volume;
 
@@ -506,7 +507,7 @@ class Alarm
      *
      * @return bool
      */
-    protected function getPlayMode(string $type)
+    protected function getPlayMode(string $type): bool
     {
         $mode = Helper::getMode($this->attributes["PlayMode"]);
         return $mode[$type];
@@ -519,9 +520,9 @@ class Alarm
      * @param string $type The play mode attribute to update
      * @param bool $value The value to set the attribute to
      *
-     * @return static
+     * @return self
      */
-    protected function setPlayMode(string $type, bool $value)
+    protected function setPlayMode(string $type, bool $value): self
     {
         $value = (bool) $value;
 
@@ -542,7 +543,7 @@ class Alarm
      *
      * @return bool
      */
-    public function getRepeat()
+    public function getRepeat(): bool
     {
         return $this->getPlayMode("repeat");
     }
@@ -553,9 +554,9 @@ class Alarm
      *
      * @param bool $repeat Whether repeat should be on or not
      *
-     * @return static
+     * @return self
      */
-    public function setRepeat(bool $repeat)
+    public function setRepeat(bool $repeat): self
     {
         return $this->setPlayMode("repeat", $repeat);
     }
@@ -566,7 +567,7 @@ class Alarm
      *
      * @return bool
      */
-    public function getShuffle()
+    public function getShuffle(): bool
     {
         return $this->getPlayMode("shuffle");
     }
@@ -577,9 +578,9 @@ class Alarm
      *
      * @param bool $shuffle Whether shuffle should be on or not
      *
-     * @return static
+     * @return self
      */
-    public function setShuffle(bool $shuffle)
+    public function setShuffle(bool $shuffle): self
     {
         return $this->setPlayMode("shuffle", $shuffle);
     }
@@ -590,7 +591,7 @@ class Alarm
      *
      * @return bool
      */
-    public function isActive()
+    public function isActive(): bool
     {
         return $this->attributes["Enabled"] ? true : false;
     }
@@ -599,9 +600,9 @@ class Alarm
     /**
      * Make the alarm active.
      *
-     * @return static
+     * @return self
      */
-    public function activate()
+    public function activate(): self
     {
         $this->attributes["Enabled"] = true;
 
@@ -612,9 +613,9 @@ class Alarm
     /**
      * Make the alarm inactive.
      *
-     * @return static
+     * @return self
      */
-    public function deactivate()
+    public function deactivate(): self
     {
         $this->attributes["Enabled"] = false;
 
@@ -637,9 +638,9 @@ class Alarm
     /**
      * Update the alarm with the current instance settings.
      *
-     * @return static
+     * @return self
      */
-    protected function save()
+    protected function save(): self
     {
         $params = [
             "StartLocalTime"        =>  $this->attributes["StartTime"],
