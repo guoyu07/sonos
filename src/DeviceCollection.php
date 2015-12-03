@@ -3,17 +3,25 @@
 namespace duncan3dc\Sonos;
 
 use Doctrine\Common\Cache\Cache as CacheInterface;
+use duncan3dc\DomParser\XmlParser;
+use GuzzleHttp\Client;
+use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
  * Manage a group of devices.
  */
-class DeviceCollection
+class DeviceCollection implements LoggerAwareInterface
 {
     const CACHE_KEY = "device-ip-addresses-1.8.0";
 
     protected $addresses = [];
+
+    /**
+     * @var Speaker[]|null $speakers Speakers that are available on the current network.
+     */
+    protected $speakers;
 
     /**
      * @var CacheInterface $cache The long-lived cache object from the Network instance.
@@ -43,6 +51,32 @@ class DeviceCollection
             $logger = new NullLogger;
         }
         $this->logger = $logger;
+    }
+
+
+    /**
+     * Set the logger object to use.
+     *
+     * @var LoggerInterface $logger The logging object
+     *
+     * @return self
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+
+        return $this;
+    }
+
+
+    /**
+     * Get the logger object to use.
+     *
+     * @return LoggerInterface $logger The logging object
+     */
+    public function getLogger()
+    {
+        return $this->logger;
     }
 
 
@@ -157,6 +191,71 @@ class DeviceCollection
     public function clear(): self
     {
         $this->addresses = [];
+
+        return $this;
+    }
+
+
+    /**
+     * Get all the speakers for these devices.
+     *
+     * @return Speaker[]
+     */
+    public function getSpeakers(): array
+    {
+        if (is_array($this->speakers)) {
+            return $this->speakers;
+        }
+
+        $devices = $this->getDevices();
+        if (count($devices) < 1) {
+            throw new \RuntimeException("No devices found on the current network");
+        }
+
+        $this->logger->info("creating speaker instances");
+
+        # Get the topology information from 1 speaker
+        $topology = [];
+        $ip = reset($devices)->ip;
+        $uri = "http://{$ip}:1400/status/topology";
+        $this->logger->notice("Getting topology info from: {$uri}");
+        $xml = (string) (new Client)->get($uri)->getBody();
+        $players = (new XmlParser($xml))->getTag("ZonePlayers")->getTags("ZonePlayer");
+        foreach ($players as $player) {
+            $attributes = $player->getAttributes();
+            $ip = parse_url($attributes["location"])["host"];
+            $topology[$ip] = $attributes;
+        }
+
+        $this->speakers = [];
+        foreach ($devices as $device) {
+            if (!$device->isSpeaker()) {
+                continue;
+            }
+
+            $speaker = new Speaker($device);
+
+            if (!isset($topology[$device->ip])) {
+                throw new \RuntimeException("Failed to lookup the topology info for this speaker");
+            }
+
+            $speaker->setTopology($topology[$device->ip]);
+
+            $this->speakers[$device->ip] = $speaker;
+        }
+
+        return $this->speakers;
+    }
+
+
+    /**
+     * Reset any previously gathered speaker information.
+     *
+     * @return self
+     */
+    public function clearTopology(): self
+    {
+        $this->speakers = null;
 
         return $this;
     }

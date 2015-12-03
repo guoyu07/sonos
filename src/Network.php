@@ -2,13 +2,10 @@
 
 namespace duncan3dc\Sonos;
 
-use Doctrine\Common\Cache\Cache as CacheInterface;
 use duncan3dc\DomParser\XmlParser;
 use duncan3dc\Sonos\Services\Radio;
-use GuzzleHttp\Client;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 /**
  * Provides methods to locate speakers/controllers/playlists on the current network.
@@ -16,9 +13,9 @@ use Psr\Log\NullLogger;
 class Network implements LoggerAwareInterface
 {
     /**
-     * @var Speaker[]|null $speakers Speakers that are available on the current network.
+     * @var DeviceCollection $collection The collection of devices on the network.
      */
-    protected $speakers;
+    protected $collection;
 
     /**
      * @var Playlists[]|null $playlists Playlists that are available on the current network.
@@ -31,44 +28,16 @@ class Network implements LoggerAwareInterface
     protected $alarms;
 
     /**
-     * @var CacheInterface $cache The cache object to use for the expensive multicast discover to find Sonos devices on the network.
-     */
-    protected $cache;
-
-    /**
-     * @var LoggerInterface $logger The logging object.
-     */
-    protected $logger;
-
-    /**
-     * @var DeviceCollection $collection The collection of devices on the network.
-     */
-    protected $collection;
-
-    /**
-     * @var string $multicastAddress The multicast address to use for SSDP discovery.
-     */
-    protected $multicastAddress = "239.255.255.250";
-
-    /**
      * Create a new instance.
      *
-     * @param CacheInterface $cache The cache object to use for the expensive multicast discover to find Sonos devices on the network
-     * @param LoggerInterface $logger The logging object
+     * @param DeviceCollection $collection The collection of devices on this network
      */
-    public function __construct(CacheInterface $cache = null, LoggerInterface $logger = null)
+    public function __construct(DeviceCollection $collection = null)
     {
-        if ($cache === null) {
-            $cache = new Cache;
+        if ($collection === null) {
+            $collection = new DeviceCollection;
         }
-        $this->cache = $cache;
-
-        if ($logger === null) {
-            $logger = new NullLogger;
-        }
-        $this->logger = $logger;
-
-        $this->collection = new DeviceCollection($this->cache, $this->logger);
+        $this->collection = $collection;
     }
 
 
@@ -81,7 +50,7 @@ class Network implements LoggerAwareInterface
      */
     public function setLogger(LoggerInterface $logger)
     {
-        $this->logger = $logger;
+        $this->collection->setLogger($logger);
 
         return $this;
     }
@@ -94,37 +63,7 @@ class Network implements LoggerAwareInterface
      */
     public function getLogger()
     {
-        return $this->logger;
-    }
-
-
-    /**
-     * Set the collection of devices to use.
-     *
-     * @param DeviceCollection $collection The collection to use
-     *
-     * @return static
-     */
-    public function setDeviceCollection(DeviceCollection $collection)
-    {
-        $this->collection = $collection;
-
-        return $this;
-    }
-
-
-    /**
-     * Set the multicast address to use for SSDP discovery.
-     *
-     * @var string $multicastAddress The address to use
-     *
-     * @return static
-     */
-    public function setMulticastAddress($multicastAddress)
-    {
-        $this->multicastAddress = $multicastAddress;
-
-        return $this;
+        return $this->collection->getLogger();
     }
 
 
@@ -135,48 +74,7 @@ class Network implements LoggerAwareInterface
      */
     public function getSpeakers(): array
     {
-        if (is_array($this->speakers)) {
-            return $this->speakers;
-        }
-
-        $devices = $this->collection->getDevices();
-        if (count($devices) < 1) {
-            throw new \RuntimeException("No devices found on the current network");
-        }
-
-        $this->logger->info("creating speaker instances");
-
-        # Get the topology information from 1 speaker
-        $topology = [];
-        $ip = reset($devices)->ip;
-        $uri = "http://{$ip}:1400/status/topology";
-        $this->logger->notice("Getting topology info from: {$uri}");
-        $xml = (string) (new Client)->get($uri)->getBody();
-        $players = (new XmlParser($xml))->getTag("ZonePlayers")->getTags("ZonePlayer");
-        foreach ($players as $player) {
-            $attributes = $player->getAttributes();
-            $ip = parse_url($attributes["location"])["host"];
-            $topology[$ip] = $attributes;
-        }
-
-        $this->speakers = [];
-        foreach ($devices as $device) {
-            if (!$device->isSpeaker()) {
-                continue;
-            }
-
-            $speaker = new Speaker($device);
-
-            if (!isset($topology[$device->ip])) {
-                throw new \RuntimeException("Failed to lookup the topology info for this speaker");
-            }
-
-            $speaker->setTopology($topology[$device->ip]);
-
-            $this->speakers[$device->ip] = $speaker;
-        }
-
-        return $this->speakers;
+        return $this->collection->getSpeakers();
     }
 
 
@@ -187,7 +85,7 @@ class Network implements LoggerAwareInterface
      */
     public function clearTopology(): self
     {
-        $this->speakers = null;
+        $this->collection->clearTopology();
 
         return $this;
     }
