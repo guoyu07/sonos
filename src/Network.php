@@ -42,6 +42,11 @@ class Network implements LoggerAwareInterface
     protected $logger;
 
     /**
+     * @var DeviceCollection $collection The collection of devices on the network.
+     */
+    protected $collection;
+
+    /**
      * @var string $multicastAddress The multicast address to use for SSDP discovery.
      */
     protected $multicastAddress = "239.255.255.250";
@@ -63,6 +68,8 @@ class Network implements LoggerAwareInterface
             $logger = new NullLogger;
         }
         $this->logger = $logger;
+
+        $this->collection = new DeviceCollection($this->cache, $this->logger);
     }
 
 
@@ -93,6 +100,21 @@ class Network implements LoggerAwareInterface
 
 
     /**
+     * Set the collection of devices to use.
+     *
+     * @param DeviceCollection $collection The collection to use
+     *
+     * @return static
+     */
+    public function setDeviceCollection(DeviceCollection $collection)
+    {
+        $this->collection = $collection;
+
+        return $this;
+    }
+
+
+    /**
      * Set the multicast address to use for SSDP discovery.
      *
      * @var string $multicastAddress The address to use
@@ -108,85 +130,6 @@ class Network implements LoggerAwareInterface
 
 
     /**
-     * Get all the devices on the current network.
-     *
-     * @return string[] An array of ip addresses
-     */
-    protected function getDevices()
-    {
-        $this->logger->info("discovering devices...");
-
-        $port = 1900;
-
-        $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-        socket_set_option($sock, getprotobyname("ip"), IP_MULTICAST_TTL, 2);
-
-        $data = "M-SEARCH * HTTP/1.1\r\n";
-        $data .= "HOST: {$this->multicastAddress}:reservedSSDPport\r\n";
-        $data .= "MAN: ssdp:discover\r\n";
-        $data .= "MX: 1\r\n";
-        $data .= "ST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n";
-
-        $this->logger->debug($data);
-
-        socket_sendto($sock, $data, strlen($data), null, $this->multicastAddress, $port);
-
-        $read = [$sock];
-        $write = [];
-        $except = [];
-        $name = null;
-        $port = null;
-        $tmp = "";
-
-        $response = "";
-        while (socket_select($read, $write, $except, 1)) {
-            socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
-            $response .= $tmp;
-        }
-
-        $this->logger->debug($response);
-
-        $devices = [];
-        foreach (explode("\r\n\r\n", $response) as $reply) {
-            if (!$reply) {
-                continue;
-            }
-
-            $data = [];
-            foreach (explode("\r\n", $reply) as $line) {
-                if (!$pos = strpos($line, ":")) {
-                    continue;
-                }
-                $key = strtolower(substr($line, 0, $pos));
-                $val = trim(substr($line, $pos + 1));
-                $data[$key] = $val;
-            }
-            $devices[] = $data;
-        }
-
-        $return = [];
-        $unique = [];
-        foreach ($devices as $device) {
-            if ($device["st"] !== "urn:schemas-upnp-org:device:ZonePlayer:1") {
-                continue;
-            }
-            if (in_array($device["usn"], $unique)) {
-                continue;
-            }
-            $this->logger->info("found device: {usn}", $device);
-
-            $url = parse_url($device["location"]);
-            $ip = $url["host"];
-
-            $return[] = $ip;
-            $unique[] = $device["usn"];
-        }
-
-        return $return;
-    }
-
-
-    /**
      * Get all the speakers on the network.
      *
      * @return Speaker[]
@@ -197,27 +140,16 @@ class Network implements LoggerAwareInterface
             return $this->speakers;
         }
 
-        $this->logger->info("creating speaker instances");
-
-        if ($this->cache->contains("devices")) {
-            $this->logger->info("getting device info from cache");
-            $devices = $this->cache->fetch("devices");
-        } else {
-            $devices = $this->getDevices();
-
-            # Only cache the devices if we actually found some
-            if (count($devices) > 0) {
-                $this->cache->save("devices", $devices);
-            }
-        }
-
+        $devices = $this->collection->getDevices();
         if (count($devices) < 1) {
             throw new \RuntimeException("No devices found on the current network");
         }
 
+        $this->logger->info("creating speaker instances");
+
         # Get the topology information from 1 speaker
         $topology = [];
-        $ip = reset($devices);
+        $ip = reset($devices)->ip;
         $uri = "http://{$ip}:1400/status/topology";
         $this->logger->notice("Getting topology info from: {$uri}");
         $xml = (string) (new Client)->get($uri)->getBody();
@@ -229,22 +161,20 @@ class Network implements LoggerAwareInterface
         }
 
         $this->speakers = [];
-        foreach ($devices as $ip) {
-            $device = new Device($ip, $this->cache, $this->logger);
-
+        foreach ($devices as $device) {
             if (!$device->isSpeaker()) {
                 continue;
             }
 
             $speaker = new Speaker($device);
 
-            if (!isset($topology[$ip])) {
+            if (!isset($topology[$device->ip])) {
                 throw new \RuntimeException("Failed to lookup the topology info for this speaker");
             }
 
-            $speaker->setTopology($topology[$ip]);
+            $speaker->setTopology($topology[$device->ip]);
 
-            $this->speakers[$ip] = $speaker;
+            $this->speakers[$device->ip] = $speaker;
         }
 
         return $this->speakers;
