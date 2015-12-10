@@ -2,7 +2,7 @@
 
 namespace duncan3dc\Sonos;
 
-use Doctrine\Common\Cache\Cache as CacheInterface;
+use Psr\Cache\CacheItemPoolInterface as CacheInterface;
 use duncan3dc\DomParser\XmlParser;
 use GuzzleHttp\Client;
 use Psr\Log\LoggerInterface;
@@ -24,7 +24,7 @@ class Device
     protected $model;
 
     /**
-     * @var CacheInterface $cache The long-lived cache object from the Network instance.
+     * @var CacheInterface $cache The long-lived cache object from the DeviceCollection instance.
      */
     protected $cache;
 
@@ -68,13 +68,16 @@ class Device
     {
         $uri = "http://{$this->ip}:1400{$url}";
 
-        if ($this->cache->contains($uri)) {
+        if ($this->cache->hasItem($uri)) {
             $this->logger->info("getting xml from cache: {$uri}");
-            $xml = $this->cache->fetch($uri);
+            $xml = $this->cache->getItem($uri)->get();
         } else {
             $this->logger->notice("requesting xml from: {$uri}");
             $xml = (string) (new Client)->get($uri)->getBody();
-            $this->cache->save($uri, $xml, Cache::DAY);
+            $cacheItem = $this->cache->getItem($uri);
+            $cacheItem->set($xml);
+            $cacheItem->expiresAfter(new \DateInterval("P1D"));
+            $this->cache->save($cacheItem);
         }
 
         return new XmlParser($xml);

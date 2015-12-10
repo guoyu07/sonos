@@ -11,12 +11,23 @@
         "homepage": "https://github.com/duncan3dc",
         "role": "Developer"
     }],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "github.com:php-fig/cache"
+        },
+        {
+            "type": "vcs",
+            "url": "github.com:duncan3dc/cache"
+        }
+    ],
     "require": {
-        "doctrine/cache": "^1.4",
+        "duncan3dc/cache": "dev-master",
         "duncan3dc/domparser": "^1.4.1",
         "duncan3dc/speaker": "^0.6.0",
         "guzzlehttp/guzzle": "^6.0",
         "league/flysystem": "^1.0",
+        "psr/cache": "dev-master",
         "psr/log": "1.0.0",
         "ext-soap": "*",
         "ext-sockets": "*",

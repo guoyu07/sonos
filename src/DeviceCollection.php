@@ -2,7 +2,7 @@
 
 namespace duncan3dc\Sonos;
 
-use Doctrine\Common\Cache\Cache as CacheInterface;
+use Psr\Cache\CacheItemPoolInterface as CacheInterface;
 use duncan3dc\DomParser\XmlParser;
 use GuzzleHttp\Client;
 use Psr\Log\LoggerAwareInterface;
@@ -24,7 +24,7 @@ class DeviceCollection implements LoggerAwareInterface
     protected $speakers;
 
     /**
-     * @var CacheInterface $cache The long-lived cache object from the Network instance.
+     * @var CacheInterface $cache The long-lived cache object.
      */
     protected $cache;
 
@@ -83,9 +83,9 @@ class DeviceCollection implements LoggerAwareInterface
     public function getDevices(): array
     {
         if (count($this->addresses) < 1) {
-            if ($this->cache->contains(self::CACHE_KEY)) {
+            if ($this->cache->hasItem(self::CACHE_KEY)) {
                 $this->logger->info("getting device info from cache");
-                $this->addresses = $this->cache->fetch(self::CACHE_KEY);
+                $this->addresses = $this->cache->getItem(self::CACHE_KEY)->get();
             } else {
                 $this->discoverDevices();
             }
@@ -181,7 +181,10 @@ class DeviceCollection implements LoggerAwareInterface
     {
         if (!in_array($ip, $this->addresses, true)) {
             $this->addresses[] = $ip;
-            $this->cache->save(self::CACHE_KEY, $this->addresses);
+
+            $cacheItem = $this->cache->getItem(self::CACHE_KEY);
+            $cacheItem->set($this->addresses);
+            $this->cache->save($cacheItem);
         }
 
         return $this;

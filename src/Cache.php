@@ -2,12 +2,12 @@
 
 namespace duncan3dc\Sonos;
 
-use Doctrine\Common\Cache\FilesystemCache;
+use duncan3dc\Cache\Pool;
 
 /**
  * A cache provider.
  */
-class Cache extends FilesystemCache
+class Cache extends Pool
 {
     const MINUTE = 60;
     const HOUR = self::MINUTE * 60;

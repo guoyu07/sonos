@@ -7,6 +7,7 @@ Changelog
 
 * [Support] Drop support for PHP 5.6, to make use of new PHP 7.0 features.
 * [Network] The construction of a new instance now only accepts a DeviceCollection instance.
+* [Network] Replaced the doctrine/cache dependency with any PSR-6 compatible cache library.
 * Scalar parameter type hints have been added where possible.
 * Return type hints have been added where possible.
 
