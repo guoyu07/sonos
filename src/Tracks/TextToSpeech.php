@@ -9,12 +9,12 @@ use duncan3dc\Speaker\Providers\ProviderInterface;
 use duncan3dc\Speaker\TextToSpeech as TextToSpeechHandler;
 
 /**
- * Convert a string of a text to a spoken word mp3.
+ * Convert a string of a text to spoken word audio.
  */
 class TextToSpeech implements UriInterface
 {
     /**
-     * @var Directory $directory The directory to store the mp3 in.
+     * @var Directory $directory The directory to store the audio file in.
      */
     protected $directory;
 
@@ -37,7 +37,7 @@ class TextToSpeech implements UriInterface
      * Create a TextToSpeech object.
      *
      * @param string $text The text to convert
-     * @param Directory $directory The directory to store the mp3 in.
+     * @param Directory $directory The directory to store the audio file in
      */
     public function __construct($text, Directory $directory, ProviderInterface $provider = null)
     {
@@ -47,11 +47,12 @@ class TextToSpeech implements UriInterface
 
         $this->directory = $directory;
         $this->text = $text;
-        $this->filename = md5($this->text) . ".mp3";
 
         if ($provider !== null) {
             $this->setProvider($provider);
         }
+
+        $this->filename = md5($this->text) . "." . $this->provider->getFormat();
     }
 
 
@@ -100,8 +101,8 @@ class TextToSpeech implements UriInterface
         if (!$this->directory->has($this->filename)) {
             $provider = $this->getProvider();
             $tts = new TextToSpeechHandler($this->text, $provider);
-            $mp3 = $tts->getAudioData();
-            $this->directory->write($this->filename, $mp3);
+            $data = $tts->getAudioData();
+            $this->directory->write($this->filename, $data);
         }
 
         return "x-file-cifs://" . $this->directory->getSharePath() . "/{$this->filename}";
